@@ -1,53 +1,119 @@
-ENES100: Outdoor Terrain Vehicle (OTV)
+# Material Mermaids – Autonomous OTV (Object Transport Vehicle)
 
-Overview
-This repository contains the firmware and supporting code for our Outdoor Terrain Vehicle (OTV), designed for the ENES100: Introduction to Engineering Design course at the University of Maryland, College Park.
+Autonomous Object Transport Vehicle (OTV) designed and built for a structured mission course involving navigation, obstacle avoidance, object pickup, weighing, and material identification.
 
-Our OTV is designed to autonomously navigate outdoor terrain, perform mission objectives, and transmit data using an integrated sensor suite. The project combines mechanical design, materials selection, embedded programming, and teamwork across multiple subsystems.
+![Final OTV Prototype](media/otv_final.jpg)
+<!-- ↑ Replace with a clear photo of the completed robot -->
 
-Repository Structure
-main.ino            # Core Arduino program for the OTV
-/drive              # Motor control, PID tuning, and movement algorithms
-/components         # Sensor integration, servo control, and I/O management
-/docs               # Reports, design files, and documentation (optional)
-README.md           # This file
+---
 
-Features
-- Autonomous navigation via waypoint-based control
-- Sensor integration (ultrasonic, load cell, IR)
-- Custom drive algorithms with PID correction
-- Modular component system for easy debugging and updates
-- Lightweight frame optimized by the Materials Team
+## Project Overview
 
-Hardware Overview
-- Microcontroller: Arduino Mega 2560
-- Motors: Dual DC gear motors with encoders
-- Power: 12V LiFePO4 battery pack
-- Sensors: Ultrasonic, IMU, GPS, Load cell (optional)
-- Communication: Serial and I2C interfaces
-- Chassis: Plywood + 3D printed mounts
+The Material Mermaids OTV is a four-wheel autonomous robot capable of:
+- Navigating a constrained course using ultrasonic sensing
+- Traversing randomly placed obstacles
+- Collecting a ball via a ramp/scoop intake
+- Weighing the object using a load cell
+- Classifying the object’s material based on weight and structure
 
-Getting Started
-1. Prerequisites
-- Arduino IDE (v2.0+)
-- Libraries: ENES100.h (Arduino Library created for this class)
+The project emphasizes **mechanical design, propulsion modeling, embedded electronics, power budgeting, and system-level engineering documentation**.
 
-2. Uploading Code
-- Clone this repository:
-  git clone (https://github.com/Mbaugh447/OTV-Code-Material-Mermaids/)
-- Open main.ino in Arduino IDE.
-- Select the correct board and port.
-- Upload the program.
+---
 
-Team Structure
-- Programming Team: Embedded code, drive logic, and sensor integration
-- Electronics Team: Circuit design, power distribution, and wiring
-- Materials Team: Chassis fabrication, component mounting, and analysis
-- Testing & Operations: Field testing, mission performance, and data logging
+## System Architecture
 
-License
-This project is for academic use under the ENES100 course at the University of Maryland. All hardware and code designs are open for educational purposes.
+![System Block Diagram](media/system_block_diagram.png)
+<!-- ↑ Optional: block diagram showing motors, sensors, MCU, battery -->
 
-Team Name: Material Mermaids
-Course: ENES100, University of Maryland
-Semester: Fall 2025
+### Mechanical Design
+- Plywood base chassis with four corner-mounted DC motors
+- Direct-drive wheels with added surface treatment for traction
+- Front ramp + scoop intake guiding object onto scale
+- Load cell mounted between ramp and base for weighing
+
+![Mechanical Layout](media/mechanical_layout.png)
+<!-- ↑ Top-down or side view of the chassis -->
+
+---
+
+## Propulsion & Drive
+
+- **Drive configuration:** 4-wheel differential drive  
+- **Motors:** Greartisan 12V DC geared motors (200 RPM, high torque)  
+- **Wheel radius:** 0.0762 m  
+- **Steering:** Independent left/right motor speed control  
+
+The drivetrain was analytically modeled for rolling resistance, torque requirements, and speed, then validated against real-world measurements.
+
+![Torque-Speed Curve](media/torque_speed_curve.png)
+<!-- ↑ Graph or free-body diagram -->
+
+---
+
+## Electronics & Power
+
+### Major Components
+- Arduino Mega (main controller)
+- 2× L298N H-bridge motor drivers
+- 4× HC-SR04 ultrasonic sensors
+- HX711 + load cell (weight measurement)
+- FSR402 force sensor
+- WiFi module
+- 12V Tenergy NiMH battery pack
+
+![Wiring Diagram](media/wiring_diagram.png)
+<!-- ↑ Clean wiring diagram or annotated photo -->
+
+### Power Budget
+- **Total current draw:** ~2.14 A
+- **Battery:** 12V, 2000 mAh NiMH
+- **Estimated runtime:** ~56 minutes
+
+PWM motor control was used to limit current draw and improve traction reliability.
+
+---
+
+## Mission Capabilities
+
+![Mission Course](media/mission_course.png)
+<!-- ↑ Course layout or field photo -->
+
+The OTV successfully:
+- Navigates to within 150 mm of target locations
+- Avoids and passes multiple obstacles
+- Collects and weighs an object
+- Classifies object type (foam vs rigid plastic)
+- Completes the course autonomously
+
+---
+
+## Documentation
+
+- **Milestone 9 – Final Design Briefs:** `docs/Milestone9_Final_Design_Briefs.pdf`
+- **Sustainability / Eco Audit:** `docs/Sustainability_Eco_Audit_Report.pdf`
+- **Full Engineering Report:** `docs/Report.pdf`
+
+---
+
+## Team
+
+**Material Mermaids**  
+Ava Mantzouranis  
+Benjamin Fichter  
+Nicholas Scozzafava  
+Maren Iski  
+Charlotte Grohowski  
+Ethan Monders  
+Alfonso Gruss  
+Michael Baugh  
+
+---
+
+## Skills Demonstrated
+
+- Mechanical system design
+- Propulsion modeling and validation
+- Embedded systems and motor control
+- Sensor integration and data acquisition
+- Power budgeting and sustainability analysis
+- Technical documentation and engineering communication

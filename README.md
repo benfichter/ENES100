@@ -79,7 +79,6 @@ The OTV successfully:
 
 ## Documentation
 
-- Milestone 9 – Final Design Briefs: `docs/Milestone9_Final_Design_Briefs.pdf`
 - Sustainability / Eco Audit: `docs/Sustainability_Eco_Audit_Report.pdf`
 - Full Engineering Report: `docs/Report.pdf`
 

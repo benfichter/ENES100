@@ -1,0 +1,216 @@
+#include <Arduino.h>
+#include "Enes100.h"
+#include <math.h>
+
+// ---------------- MOTOR PINS ----------------
+#define ENA1 5
+#define IN1 22
+#define IN2 23
+#define ENB1 6
+#define IN3 24
+#define IN4 25
+#define ENA2 7
+#define IN5 26
+#define IN6 27
+#define ENB2 8
+#define IN7 28
+#define IN8 29
+
+// ---------------- ULTRASONIC PINS ----------------
+#define TRIG_FRONT_LEFT   52
+#define ECHO_FRONT_LEFT   53
+#define TRIG_FRONT_RIGHT  32
+#define ECHO_FRONT_RIGHT  33
+#define TRIG_LEFT_SIDE    40
+#define ECHO_LEFT_SIDE    41
+#define TRIG_RIGHT_SIDE   42
+#define ECHO_RIGHT_SIDE   43
+
+// ---------------- PARAMETERS ----------------
+const int BASE_SPEED = 255;
+const int TURN_SPEED = 255;
+const float TARGET_THETA = 0.0;        // desired heading in radians
+const float THETA_TOLERANCE = 0.05;    // ~3 degrees
+const int REQUIRED_CONSECUTIVE_OK = 2;
+const float OBSTACLE_THRESHOLD = 0.30; // meters
+const float MIN_VALID_READING = 0.05;  // meters
+
+// ---------------- STATE ----------------
+int thetaOKCounter = 0;
+int obstacleFrontCounter = 0;
+
+// ---------------- OBSTACLE STATE MACHINE ----------------
+enum ObstacleState {
+    NORMAL_DRIVING,
+    TURN_TO_PARALLEL,
+    CLEAR_OBSTACLE_FORWARD,
+    RETURN_TO_GOAL_HEADING
+};
+ObstacleState obsState = NORMAL_DRIVING;
+
+float desiredTheta = 0.0;
+unsigned long clearStartTime = 0;
+
+// ---------------- MOTOR CONTROL ----------------
+void setMotorPWM(int leftPWM, int rightPWM, bool leftForward=true, bool rightForward=true) {
+    leftPWM  = constrain(leftPWM, 0, 255);
+    rightPWM = constrain(rightPWM, 0, 255);
+
+    digitalWrite(IN1, leftForward ? HIGH : LOW);
+    digitalWrite(IN2, leftForward ? LOW : HIGH);
+    digitalWrite(IN5, leftForward ? HIGH : LOW);
+    digitalWrite(IN6, leftForward ? LOW : HIGH);
+    analogWrite(ENA1, leftPWM);
+    analogWrite(ENA2, leftPWM);
+
+    digitalWrite(IN3, rightForward ? LOW : HIGH);
+    digitalWrite(IN4, rightForward ? HIGH : LOW);
+    digitalWrite(IN7, rightForward ? LOW : HIGH);
+    digitalWrite(IN8, rightForward ? HIGH : LOW);
+    analogWrite(ENB1, rightPWM);
+    analogWrite(ENB2, rightPWM);
+}
+
+void stopMotors() { setMotorPWM(0,0); }
+
+void pivotInPlace(float thetaError) {
+    // Spins in place with full TURN_SPEED
+    if (thetaError > 0)
+        setMotorPWM(TURN_SPEED, TURN_SPEED, false, true); // left turn
+    else
+        setMotorPWM(TURN_SPEED, TURN_SPEED, true, false); // right turn
+}
+
+void moveForward() {
+    setMotorPWM(BASE_SPEED, BASE_SPEED, true, true);
+}
+
+// ---------------- ANGLE MATH ----------------
+float normalizeAngle(float angle) {
+    while (angle >  M_PI) angle -= 2 * M_PI;
+    while (angle < -M_PI) angle += 2 * M_PI;
+    return angle;
+}
+
+float getThetaErrorTo(float target) {
+    return normalizeAngle(target - Enes100.getTheta());
+}
+
+bool isThetaAcceptable(float err) {
+    return fabs(err) <= THETA_TOLERANCE;
+}
+
+// ---------------- ULTRASONICS ----------------
+float readUltrasonicDistance(int trigPin, int echoPin) {
+    digitalWrite(trigPin, LOW); delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH); delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+
+    long duration = pulseIn(echoPin, HIGH, 30000);
+    if (duration == 0) return -1.0;
+    float d = (duration * 0.0343 / 2.0) / 100.0;
+    return d;
+}
+
+float getFrontDistance() {
+    float dL = readUltrasonicDistance(TRIG_FRONT_LEFT, ECHO_FRONT_LEFT);
+    float dR = readUltrasonicDistance(TRIG_FRONT_RIGHT, ECHO_FRONT_RIGHT);
+    if (dL > 0 && dL < MIN_VALID_READING) dL = -1;
+    if (dR > 0 && dR < MIN_VALID_READING) dR = -1;
+    if (dL < 0 && dR < 0) return -1;
+    if (dL < 0) return dR;
+    if (dR < 0) return dL;
+    return min(dL, dR);
+}
+
+float getLeftSideDistance() { return readUltrasonicDistance(TRIG_LEFT_SIDE, ECHO_LEFT_SIDE); }
+float getRightSideDistance() { return readUltrasonicDistance(TRIG_RIGHT_SIDE, ECHO_RIGHT_SIDE); }
+
+// ---------------- SETUP ----------------
+void setup() {
+    int motorPins[] = {IN1,IN2,IN3,IN4,IN5,IN6,IN7,IN8,ENA1,ENB1,ENA2,ENB2};
+    for(int i=0;i<12;i++) pinMode(motorPins[i], OUTPUT);
+
+    pinMode(TRIG_FRONT_LEFT, OUTPUT); pinMode(ECHO_FRONT_LEFT, INPUT);
+    pinMode(TRIG_FRONT_RIGHT, OUTPUT); pinMode(ECHO_FRONT_RIGHT, INPUT);
+    pinMode(TRIG_LEFT_SIDE, OUTPUT); pinMode(ECHO_LEFT_SIDE, INPUT);
+    pinMode(TRIG_RIGHT_SIDE, OUTPUT); pinMode(ECHO_RIGHT_SIDE, INPUT);
+
+    Serial.begin(9600);
+    Enes100.begin("Material_Mermaids", MATERIAL, 500, 1116, 50, 51);
+    while(!Enes100.isVisible()) { Serial.println("Waiting for visibility..."); delay(50); }
+    Serial.println("READY.");
+}
+
+// ---------------- LOOP ----------------
+void loop() {
+    if(!Enes100.isVisible()){ stopMotors(); return; }
+
+    float distFront = getFrontDistance();
+    float x = Enes100.getX();
+    float thetaError = normalizeAngle(TARGET_THETA - Enes100.getTheta());
+
+    switch(obsState){
+
+        case NORMAL_DRIVING:
+            if(distFront > MIN_VALID_READING && distFront <= OBSTACLE_THRESHOLD)
+                obstacleFrontCounter++;
+            else
+                obstacleFrontCounter = 0;
+
+            if(obstacleFrontCounter >= 3){
+                stopMotors();
+                desiredTheta = (x <= 1.0f) ? M_PI/2 : -M_PI/2;
+                desiredTheta = normalizeAngle(desiredTheta);
+                Serial.print("Obstacle detected, turning to desiredTheta: "); Serial.println(desiredTheta);
+                obsState = TURN_TO_PARALLEL;
+                thetaOKCounter = 0;
+                break;
+            }
+
+            if(!isThetaAcceptable(thetaError)){
+                thetaOKCounter = 0;
+                pivotInPlace(thetaError);
+            } else {
+                thetaOKCounter++;
+                if(thetaOKCounter >= REQUIRED_CONSECUTIVE_OK) moveForward();
+                else stopMotors();
+            }
+            break;
+
+        case TURN_TO_PARALLEL:{
+            float err = getThetaErrorTo(desiredTheta);
+            Serial.print("Turning... thetaError: "); Serial.println(err, 4);
+
+            // Continuous pivot until target reached
+            if(!isThetaAcceptable(err)){
+                pivotInPlace(err);
+            } else{
+                stopMotors();
+                Serial.println("Reached ±π/2, moving forward to clear obstacle");
+                clearStartTime = millis();
+                obsState = CLEAR_OBSTACLE_FORWARD;
+            }
+        } break;
+
+        case CLEAR_OBSTACLE_FORWARD:
+            moveForward();
+            if(millis() - clearStartTime >= 300){ // slightly longer move forward
+                obsState = RETURN_TO_GOAL_HEADING;
+            }
+            break;
+
+        case RETURN_TO_GOAL_HEADING:{
+            float errReturn = normalizeAngle(TARGET_THETA - Enes100.getTheta());
+            Serial.print("Returning to goal heading... thetaError: "); Serial.println(errReturn, 4);
+            if(!isThetaAcceptable(errReturn)){
+                pivotInPlace(errReturn);
+            } else{
+                stopMotors();
+                obsState = NORMAL_DRIVING;
+            }
+        } break;
+    }
+
+    delay(10);
+}

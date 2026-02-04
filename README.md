@@ -1,97 +1,87 @@
-# Material Mermaids – Autonomous OTV (Object Transport Vehicle)
+# Material Mission – Autonomous OTV (Object Transport Vehicle)
 
-Autonomous Object Transport Vehicle (OTV) designed and built for a structured mission course involving navigation, obstacle avoidance, object pickup, weighing, and material identification.
+Autonomous Object Transport Vehicle (OTV) designed for navigation, obstacle avoidance, object pickup, weighing, and material identification as part of a team-based engineering design project.
 
-![Final OTV Prototype](media/otv_final.jpg)
-<!-- ↑ Replace with a clear photo of the completed robot -->
+![Final OTV Prototype](media/otv_final.png)
 
 ---
 
 ## Project Overview
 
-The Material Mermaids OTV is a four-wheel autonomous robot capable of:
-- Navigating a constrained course using ultrasonic sensing
-- Traversing randomly placed obstacles
-- Collecting a ball via a ramp/scoop intake
-- Weighing the object using a load cell
-- Classifying the object’s material based on weight and structure
+The Material Mermaids OTV is a four-wheel autonomous robotic platform capable of completing a structured mission course. The vehicle autonomously navigates to target locations, avoids obstacles, collects a ball using a ramp and scoop mechanism, weighs the object using an onboard load cell, and classifies the object based on material properties.
 
-The project emphasizes **mechanical design, propulsion modeling, embedded electronics, power budgeting, and system-level engineering documentation**.
+The project emphasizes full system engineering, including mechanical design, propulsion modeling, embedded electronics, power budgeting, and technical documentation.
 
 ---
 
-## System Architecture
+## Mechanical Design
 
-![System Block Diagram](media/system_block_diagram.png)
-<!-- ↑ Optional: block diagram showing motors, sensors, MCU, battery -->
+![Exploded View](media/exploded_view.png)
 
-### Mechanical Design
-- Plywood base chassis with four corner-mounted DC motors
-- Direct-drive wheels with added surface treatment for traction
-- Front ramp + scoop intake guiding object onto scale
-- Load cell mounted between ramp and base for weighing
+- Plywood chassis with corner-mounted DC motors  
+- Direct-drive wheel configuration  
+- Front ramp and scoop mechanism to guide object onto scale  
+- Load cell positioned between ramp and base for accurate weighing  
 
-![Mechanical Layout](media/mechanical_layout.png)
-<!-- ↑ Top-down or side view of the chassis -->
+### Mass Properties & Center of Mass
+
+![Center of Mass & Attributes](media/com_attributes.png)
+
+Mass properties and center-of-mass (COM) were evaluated using Autodesk Inventor iProperties to ensure stability during motion and object intake. The COM analysis informed component placement to reduce tipping and uneven wheel loading.
 
 ---
 
-## Propulsion & Drive
+## Propulsion & Drive System
 
-- **Drive configuration:** 4-wheel differential drive  
-- **Motors:** Greartisan 12V DC geared motors (200 RPM, high torque)  
+![Torque–Speed Curve](media/speed_curve.png)
+
+- **Drive configuration:** Four-wheel differential drive  
+- **Motors:** 12V DC geared motors (200 RPM nominal)  
+- **Steering:** Independent left/right motor speed control via PWM  
 - **Wheel radius:** 0.0762 m  
-- **Steering:** Independent left/right motor speed control  
 
-The drivetrain was analytically modeled for rolling resistance, torque requirements, and speed, then validated against real-world measurements.
-
-![Torque-Speed Curve](media/torque_speed_curve.png)
-<!-- ↑ Graph or free-body diagram -->
+Analytical propulsion modeling was performed to estimate rolling resistance, required torque, and achievable linear speed. Experimental testing revealed lower real-world speeds due to wheel slip and uneven load distribution, which were addressed through traction modification.
 
 ---
 
-## Electronics & Power
+## Electronics & Power System
 
-### Major Components
+![Wiring Diagram](media/wiring.png)
+
+### Core Electronics
 - Arduino Mega (main controller)
 - 2× L298N H-bridge motor drivers
 - 4× HC-SR04 ultrasonic sensors
-- HX711 + load cell (weight measurement)
-- FSR402 force sensor
-- WiFi module
-- 12V Tenergy NiMH battery pack
-
-![Wiring Diagram](media/wiring_diagram.png)
-<!-- ↑ Clean wiring diagram or annotated photo -->
+- HX711 amplifier with load cell
+- Force-sensitive resistor (FSR)
+- WiFi communication module
+- 12V NiMH battery pack
 
 ### Power Budget
-- **Total current draw:** ~2.14 A
-- **Battery:** 12V, 2000 mAh NiMH
-- **Estimated runtime:** ~56 minutes
+- **Total current draw:** ~2.14 A  
+- **Battery capacity:** 2000 mAh @ 12 V  
+- **Estimated runtime:** ~56 minutes  
 
-PWM motor control was used to limit current draw and improve traction reliability.
+Motor speed was PWM-limited to reduce current draw and minimize wheel slip.
 
 ---
 
 ## Mission Capabilities
 
-![Mission Course](media/mission_course.png)
-<!-- ↑ Course layout or field photo -->
-
 The OTV successfully:
-- Navigates to within 150 mm of target locations
+- Navigates autonomously to within 150 mm of target locations
 - Avoids and passes multiple obstacles
-- Collects and weighs an object
-- Classifies object type (foam vs rigid plastic)
-- Completes the course autonomously
+- Collects and weighs an object using an onboard scale
+- Classifies object material (foam vs rigid plastic)
+- Completes the mission course without human intervention
 
 ---
 
 ## Documentation
 
-- **Milestone 9 – Final Design Briefs:** `docs/Milestone9_Final_Design_Briefs.pdf`
-- **Sustainability / Eco Audit:** `docs/Sustainability_Eco_Audit_Report.pdf`
-- **Full Engineering Report:** `docs/Report.pdf`
+- Milestone 9 – Final Design Briefs: `docs/Milestone9_Final_Design_Briefs.pdf`
+- Sustainability / Eco Audit: `docs/Sustainability_Eco_Audit_Report.pdf`
+- Full Engineering Report: `docs/Report.pdf`
 
 ---
 
@@ -111,9 +101,9 @@ Michael Baugh
 
 ## Skills Demonstrated
 
-- Mechanical system design
-- Propulsion modeling and validation
-- Embedded systems and motor control
-- Sensor integration and data acquisition
-- Power budgeting and sustainability analysis
-- Technical documentation and engineering communication
+- Mechanical system design and CAD modeling  
+- Propulsion modeling and experimental validation  
+- Embedded systems and motor control  
+- Sensor integration and data acquisition  
+- Power budgeting and sustainability analysis  
+- Engineering documentation and technical communication  
